@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf8">
+        <title>share</title>
+    </head>
+    <body>
+        <textarea id="area"></textarea><br>
+        <input type="hidden" id="clip">
+        <button id="submit">Create</button>
+
+        <script src='https://unpkg.com/base65536@3/dist/iife/base65536.js' crossorigin></script>
+        <script>
+            var curUrl = new URL(location.href);
+            var x = curUrl.searchParams.get("x");
+            var enc = new TextEncoder();
+            var dec = new TextDecoder();
+
+            if (x !== null) {
+                area.value = dec.decode(base65536.decode(x));
+            }
+
+            submit.onclick = function onSubmit() {
+                var coded = base65536.encode(enc.encode(area.value));
+                var newUrl = new URL(location.href);
+                [...newUrl.searchParams.keys()].forEach(x => newUrl.searchParams.delete(x));
+                clip.value = newUrl.toString() + "?x=" + coded;
+                clip.type = "text";
+                clip.select();
+                clip.setSelectionRange(0, clip.value.length);
+                document.execCommand("copy");
+                clip.type = "hidden";
+            }
+            
+        </script>
+    </body>
+</html>
