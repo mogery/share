@@ -10,26 +10,50 @@
         <button id="submit">Create</button>
 
         <script src='https://unpkg.com/base65536@3/dist/iife/base65536.js' crossorigin></script>
+        <script src='https://unpkg.com/lzma@2.3.2/src/lzma.js' crossorigin></script>
         <script>
             var curUrl = new URL(location.href);
             var x = curUrl.searchParams.get("x");
             var enc = new TextEncoder();
             var dec = new TextDecoder();
+            var lzma = new LZMA("https://unpkg.com/lzma@2.3.2/src/lzma_worker.js");
 
             if (x !== null) {
-                area.value = dec.decode(base65536.decode(x));
+                var lz = base65536.decode(x);
+                lzma.decompress(lz, (bytes, err) => {
+                    if (err) {
+                        alert(err);
+                        return;
+                    }
+                    
+                    if (typeof bytes == "string") {
+                        area.value = bytes;
+                    } else {
+                        area.value = dec.decode(bytes);
+                    }
+                })
             }
 
             submit.onclick = function onSubmit() {
-                var coded = base65536.encode(enc.encode(area.value));
-                var newUrl = new URL(location.href);
-                [...newUrl.searchParams.keys()].forEach(x => newUrl.searchParams.delete(x));
-                clip.value = newUrl.toString() + "?x=" + coded;
-                clip.type = "text";
-                clip.select();
-                clip.setSelectionRange(0, clip.value.length);
-                document.execCommand("copy");
-                clip.type = "hidden";
+                var bytes = enc.encode(area.value);
+                lzma.compress(bytes, 9, (lz, err) => {
+                    if (err) {
+                        alert(err);
+                        return;
+                    }
+
+                    var coded = base65536.encode(lz);
+                    var newUrl = new URL(location.href);
+                    [...newUrl.searchParams.keys()].forEach(x => newUrl.searchParams.delete(x));
+                    clip.value = newUrl.toString() + "?x=" + coded;
+                    clip.type = "text";
+                    clip.select();
+                    clip.setSelectionRange(0, clip.value.length);
+                    document.execCommand("copy");
+                    clip.type = "hidden";
+
+                    alert("done");
+                });
             }
             
         </script>
